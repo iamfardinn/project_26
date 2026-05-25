@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Project 26 - Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400..900;1,400..900&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400..800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#dfe4e0",
+                    "primary": "#f0ffee",
+                    "surface-container-lowest": "#0a0f0d",
+                    "pitch-green-dark": "#051A10",
+                    "inverse-primary": "#006d35",
+                    "outline-variant": "#3b4b3d",
+                    "error": "#ffb4ab",
+                    "on-primary-fixed": "#00210c",
+                    "surface-container-high": "#262b29",
+                    "inverse-surface": "#dfe4e0",
+                    "on-tertiary-container": "#736000",
+                    "surface-container-highest": "#313633",
+                    "surface-elevated": "#141C19",
+                    "secondary-fixed-dim": "#00daf8",
+                    "surface-container": "#1c211e",
+                    "on-surface": "#dfe4e0",
+                    "on-error": "#690005",
+                    "on-surface-variant": "#b9cbb9",
+                    "text-muted": "#8E9B96",
+                    "primary-fixed-dim": "#00e476",
+                    "on-secondary-fixed-variant": "#004e5a",
+                    "on-secondary-container": "#005f6d",
+                    "tertiary-fixed-dim": "#e9c400",
+                    "on-primary-container": "#007137",
+                    "danger-red": "#FF4B4B",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#005227",
+                    "on-primary": "#003919",
+                    "inverse-on-surface": "#2c322f",
+                    "on-tertiary-fixed-variant": "#544600",
+                    "primary-container": "#00ff85",
+                    "surface-bright": "#353a38",
+                    "surface-container-low": "#181d1a",
+                    "tertiary-container": "#ffdc49",
+                    "on-tertiary": "#3a3000",
+                    "surface-tint": "#00e476",
+                    "stadium-glow": "#1A2E25",
+                    "secondary-fixed": "#a5eeff",
+                    "tertiary": "#fffaf5",
+                    "surface-variant": "#313633",
+                    "error-container": "#93000a",
+                    "primary-fixed": "#61ff97",
+                    "outline": "#849584",
+                    "on-secondary-fixed": "#001f25",
+                    "secondary": "#b9f1ff",
+                    "surface": "#0f1412",
+                    "surface-dim": "#0f1412",
+                    "on-tertiary-fixed": "#221b00",
+                    "secondary-container": "#00e0ff",
+                    "tertiary-fixed": "#ffe16d",
+                    "on-secondary": "#00363f",
+                    "background": "#0f1412"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "max-width": "1440px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "48px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "stat-lg": ["JetBrains Mono"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "stat-sm": ["JetBrains Mono"],
+                    "label-caps": ["JetBrains Mono"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "stat-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "stat-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                    "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                    "display-lg": ["64px", { "lineHeight": "1", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .bg-grid {
+            background-image: 
+                linear-gradient(to right, rgba(0, 255, 133, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 133, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        /* Custom Keyframes for subtle floating animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .neoclassical-frame {
+            box-shadow: inset 0 0 0 1px rgba(0, 255, 133, 0.5), 0 0 15px rgba(0, 255, 133, 0.2);
+            padding: 4px;
+        }
+        .neoclassical-inner {
+            border: 1px solid rgba(0, 255, 133, 0.8);
+            box-shadow: 0 0 10px rgba(0, 255, 133, 0.4);
+        }
+        .ethereal-glow-cyan {
+            box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.5), 0 0 15px rgba(0, 224, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container relative pb-0">
+<!-- Radial Ambient Depth Glows -->
+<div class="fixed inset-0 pointer-events-none z-0">
+<div class="absolute top-0 right-0 w-[1000px] h-[1000px] bg-[radial-gradient(circle_at_center,_rgba(0,255,133,0.05)_0%,_transparent_70%)]"></div>
+<div class="absolute bottom-0 left-0 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,_rgba(0,224,255,0.05)_0%,_transparent_70%)]"></div>
+</div>
+<!-- TopAppBar (Web) -->
+<header class="hidden md:flex bg-[#09090b] docked full-width top-0 border-b border-primary-container shadow-[0_0_20px_rgba(0,255,133,0.3)] z-50 sticky">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-max-width mx-auto">
+<!-- Brand Logo -->
+<div class="font-display-lg text-display-lg font-black italic tracking-tighter text-primary dark:text-primary skew-x-[-12deg] transform transition-transform active:scale-95 text-shadow-[0_0_15px_rgba(240,255,238,0.5)]">
+                PROJECT 26
+            </div>
+<!-- Navigation Links -->
+<nav class="flex items-center gap-8 font-label-caps text-label-caps">
+<!-- Assuming LIVE PITCH is the active landing view intent -->
+<a class="text-primary font-bold border-b-2 border-primary pb-1 skew-x-[-12deg] transform transition-transform active:scale-95 hover:text-primary hover:bg-[#09090b] px-2" href="#">LIVE PITCH</a>
+<a class="text-text-muted hover:text-on-surface transition-colors skew-x-[-12deg] transform transition-transform active:scale-95 hover:text-primary hover:bg-[#09090b] px-2 py-1" href="#">XG ENGINE</a>
+<a class="text-text-muted hover:text-on-surface transition-colors skew-x-[-12deg] transform transition-transform active:scale-95 hover:text-primary hover:bg-[#09090b] px-2 py-1" href="#">MODEL STATUS</a>
+<a class="text-text-muted hover:text-on-surface transition-colors skew-x-[-12deg] transform transition-transform active:scale-95 hover:text-primary hover:bg-[#09090b] px-2 py-1" href="#">TACTICS</a>
+</nav>
+<!-- Trailing Actions & Profile -->
+<div class="flex items-center gap-6">
+<!-- Search Bar Placeholder based on JSON 'search_bar: on_right' -->
+<div class="relative hidden lg:block group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span>
+<input class="bg-[#09090b] border-b border-outline-variant focus:border-primary-container text-on-surface pl-10 pr-4 py-2 w-48 transition-all focus:w-64 outline-none font-body-md text-body-md placeholder:text-text-muted focus:bg-[#09090b] shadow-[inset_0_-1px_5px_rgba(0,255,133,0.1)] focus:shadow-[inset_0_-1px_10px_rgba(0,255,133,0.3)]" placeholder="Search parameters..." type="text"/>
+</div>
+<div class="flex items-center gap-3 text-primary">
+<button class="hover:text-primary-container transition-colors drop-shadow-[0_0_5px_rgba(0,255,133,0.5)]"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">monitoring</span></button>
+<button class="hover:text-primary-container transition-colors drop-shadow-[0_0_5px_rgba(0,255,133,0.5)]"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span></button>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden bg-[#09090b] shadow-[0_0_10px_rgba(0,255,133,0.5)]">
+<!-- Profile Image -->
+<img alt="Analyst Profile" class="w-full h-full object-cover grayscale opacity-90 mix-blend-luminosity" data-alt="A close up black and white portrait of a serious male data analyst. The lighting is dramatic and moody, emphasizing concentration. The aesthetic is highly professional and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo1KVXeEcOAEGVxjn7Cx4nLQIrYGlzpbb7vnfuCx4PM3KJxz7VAJvi5kz16Aer-w9O2k7Xk8I7mGFbpqGAlzrfEK8U3zJsmQu9hXq5e83_EVLWRN7I3mOKUztX1ll2HHsiBDCJM0zC308ey2lbK2ZdRSDZbWdl-wwsfMrhKo82Ojj2GmMAJTl-CVwoe9wDaStz3s85m1512bWOzm2Wr-8daAJHTZpmnnePwknwQDA74RxpAU_P3mKOkBpDDK179neUOBfU6g2Q7PE"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Hero Content -->
+<main class="flex-grow flex items-center relative py-16 z-10">
+<!-- Ambient Background Effects -->
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+<!-- Grid pattern overlay -->
+<div class="absolute inset-0 opacity-[0.05]" style="background-image: linear-gradient(#00ff85 1px, transparent 1px), linear-gradient(90deg, #00ff85 1px, transparent 1px); background-size: 40px 40px;"></div>
+</div>
+<div class="max-w-max-width w-full mx-auto px-margin-mobile md:px-margin-desktop py-24 z-10 grid grid-cols-1 lg:grid-cols-12 gap-gutter items-center">
+<!-- Left Column: Typography & CTAs -->
+<div class="lg:col-span-6 flex flex-col justify-center items-start">
+<!-- Top Badge -->
+<div class="border border-primary-container mb-8 flex items-center bg-[#09090b] p-1 shadow-[0_0_15px_rgba(0,255,133,0.3)]">
+<div class="border border-primary-container px-3 py-1 bg-[#09090b]">
+<span class="font-label-caps text-label-caps text-primary-container tracking-widest uppercase drop-shadow-[0_0_5px_rgba(0,255,133,0.8)]">
+                        &lt;&lt; THE MOST AWAITED FOOTBALL EVENT IS HERE &gt;&gt;
+                    </span>
+</div>
+</div>
+<!-- Massive Header -->
+<h1 class="font-display-lg text-[64px] leading-[64px] md:text-[96px] md:leading-[88px] font-black italic tracking-tighter mb-8 uppercase drop-shadow-[0_0_20px_rgba(0,255,133,0.2)]">
+<span class="block text-on-surface">PROJECT</span>
+<span class="block bg-gradient-to-r from-primary-container via-secondary-container to-secondary-fixed bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(0,255,133,0.5)]">
+                        26
+                    </span>
+</h1>
+<!-- Subtext -->
+<p class="font-body-lg text-body-lg text-text-muted mb-12 max-w-lg border-l-2 border-primary-container pl-4 shadow-[-5px_0_10px_rgba(0,255,133,0.1)]">
+                    Deploy advanced predictive models. Analyze real-time spatial data. Dominate the pitch with tournament-grade machine learning infrastructure.
+                </p>
+<!-- Actions -->
+<div class="flex flex-wrap gap-6 items-center">
+<!-- Primary Button -->
+<button class="group relative px-8 py-4 skew-x-[-12deg] bg-[#09090b] border border-primary-container text-primary-container overflow-hidden transition-all hover:bg-primary-container hover:text-[#09090b] shadow-[0_0_20px_rgba(0,255,133,0.4)] hover:shadow-[0_0_30px_rgba(0,255,133,0.8)] active:scale-95">
+<span class="block skew-x-[12deg] font-label-caps text-label-caps font-bold uppercase tracking-widest relative z-10 drop-shadow-[0_0_2px_currentColor]">
+                            Launch Predictor
+                        </span>
+</button>
+<!-- Secondary Button -->
+<button class="group px-8 py-4 skew-x-[-12deg] border border-secondary-container text-secondary-container bg-[#09090b] transition-all hover:bg-secondary-container hover:text-[#09090b] shadow-[0_0_15px_rgba(0,224,255,0.3)] hover:shadow-[0_0_25px_rgba(0,224,255,0.6)] active:scale-95">
+<span class="block skew-x-[12deg] font-label-caps text-label-caps font-bold uppercase tracking-widest flex items-center gap-2 drop-shadow-[0_0_2px_currentColor]">
+                            View xG Data
+                            <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</span>
+</button>
+</div>
+</div>
+<!-- Right Column: 3D Graphic / Technical Visualization -->
+<div class="lg:col-span-6 relative mt-16 lg:mt-0 perspective-1000">
+<!-- Central Tech Container -->
+<div class="relative aspect-square w-full max-w-[600px] mx-auto bg-[#09090b] neoclassical-frame transform lg:rotate-y-[-5deg] lg:rotate-x-[5deg] transition-transform duration-700 hover:rotate-y-0 hover:rotate-x-0 group">
+<div class="w-full h-full neoclassical-inner relative overflow-hidden">
+<!-- Inner Grid/Scanline effect -->
+<div class="absolute inset-0 bg-[linear-gradient(rgba(0,255,133,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,133,0.1)_1px,transparent_1px)] bg-[size:20px_20px] z-10 pointer-events-none mix-blend-screen"></div>
+<!-- Main Visualization Image -->
+<div class="absolute inset-0 bg-[#09090b] flex items-center justify-center overflow-hidden">
+<img alt="Technical Football Rendering" class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000 ease-out" data-alt="A highly technical, futuristic 3D rendering of a football (soccer) pitch. The scene is bathed in dark, moody lighting with intense neon emerald green highlights picking out geometric data nodes and spatial trajectories. The aesthetic is heavily analytical, resembling a complex coaching AI interface or a high-end esports broadcast overlay." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdw3D_6rf3UavZpHt4IL1jVD4eiQt1vCcPtLu8moeAxUDb71aEPDX7OFeZUqaQwPCLIf7b-LKC99JJK4_MtgNDSKtSWBqjvW815dIYseRsmUL2htiFNW3-_0JxDeBoabM79onXtW0PukeEsDveFLXrwmQjLU8fpsZUYykfpCs5VeZMG_xSonf3-ItZFt51W_h79lFYWkG8f93rNoQ1m_s-a27TUDWG_CGqoRXd-SO9kXSRbNIOpK22al6Ne0lOcL2j_a2SFlvM1BA" style="filter: contrast(1.3) brightness(0.9);"/>
+<!-- Overlay Radial effect simulation -->
+<div class="absolute w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,_rgba(0,255,133,0.2)_0%,_transparent_60%)] z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mix-blend-screen pointer-events-none"></div>
+</div>
+<!-- Decorative HUD elements -->
+<div class="absolute top-4 left-4 z-20 font-label-caps text-label-caps text-primary-container tracking-widest flex items-center gap-2 drop-shadow-[0_0_5px_rgba(0,255,133,0.8)]">
+<div class="w-2 h-2 bg-danger-red rounded-full animate-pulse shadow-[0_0_5px_#FF4B4B]"></div>
+                        LIVE INGESTION
+                    </div>
+<div class="absolute bottom-4 right-4 z-20 font-label-caps text-[10px] text-primary-container text-right drop-shadow-[0_0_3px_rgba(0,255,133,0.5)]">
+                        LATENCY: 12ms<br/>FRAME_RATE: 60FPS
+                    </div>
+</div>
+</div>
+<!-- Floating Tech Tag: XGBOOST -->
+<div class="absolute -top-6 left-12 lg:-left-8 z-30 skew-x-[15deg] bg-[#09090b] border border-primary-container px-4 py-2 shadow-[0_0_15px_rgba(0,255,133,0.5)] animate-[float_6s_ease-in-out_infinite]">
+<span class="block skew-x-[-15deg] font-label-caps text-label-caps text-primary-container font-bold flex items-center gap-2 drop-shadow-[0_0_3px_currentColor]">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+                        XGBOOST
+                    </span>
+</div>
+<!-- Floating Tech Tag: PYTORCH -->
+<div class="absolute bottom-12 -right-4 lg:-right-12 z-30 skew-x-[-15deg] bg-[#09090b] border border-secondary-container px-4 py-2 shadow-[0_0_15px_rgba(0,224,255,0.5)] animate-[float_8s_ease-in-out_infinite_reverse]">
+<span class="block skew-x-[15deg] font-label-caps text-label-caps text-secondary-container font-bold flex items-center gap-2 drop-shadow-[0_0_3px_currentColor]">
+<span class="material-symbols-outlined text-[14px]">memory</span>
+                        PYTORCH
+                    </span>
+</div>
+</div>
+</div>
+</main>
+<section class="relative z-20 py-16">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<!-- Section Header -->
+<div class="mb-12">
+<h2 class="font-display-lg text-headline-lg uppercase tracking-tighter text-on-background drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">MATCH OUTCOME ENGINE</h2>
+<div class="w-48 h-[2px] bg-secondary-container shadow-[0_0_15px_#00e0ff] mt-2"></div>
+</div>
+<!-- Main Engine Interface -->
+<div class="bg-[#09090b] neoclassical-frame relative overflow-hidden">
+<div class="neoclassical-inner p-8">
+<div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 items-center">
+<!-- Team A Selection -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-primary-container uppercase drop-shadow-[0_0_5px_rgba(0,255,133,0.5)]">Team A Selection</label>
+<div class="relative">
+<select class="w-full bg-[#09090b] border border-primary-container text-on-background font-label-caps py-4 px-4 appearance-none focus:outline-none focus:shadow-[0_0_15px_rgba(0,255,133,0.5)] transition-shadow">
+<option>SELECT TEAM ALPHA</option>
+<option>LONDON REDS</option>
+<option>MANCHESTER BLUES</option>
+<option>MADRID WHITES</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary-container">expand_more</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-primary-container/30 mt-4">
+<div class="text-center">
+<div class="font-stat-sm text-stat-sm text-text-muted uppercase">HISTORICAL ELO</div>
+<div class="font-stat-lg text-stat-lg drop-shadow-[0_0_5px_currentColor]">1842</div>
+</div>
+<div class="text-center">
+<div class="font-stat-sm text-stat-sm text-text-muted uppercase">FORM (LAST 5)</div>
+<div class="flex gap-1 mt-1">
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+<span class="w-2 h-2 bg-text-muted"></span>
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+<span class="w-2 h-2 bg-danger-red shadow-[0_0_5px_#FF4B4B]"></span>
+</div>
+</div>
+</div>
+</div>
+<!-- VS & Predict Button -->
+<div class="flex flex-col items-center gap-6">
+<div class="font-display-lg text-4xl font-black italic text-text-muted skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">VS</div>
+<button class="bg-[#09090b] border border-[#00ff85] text-[#00ff85] hover:bg-[#00ff85] hover:text-[#09090b] font-label-caps text-label-caps px-10 py-5 skew-x-[-12deg] transform transition-all active:scale-95 shadow-[0_0_20px_rgba(0,255,133,0.4)] hover:shadow-[0_0_30px_rgba(0,255,133,0.8)] cursor-pointer">
+<span class="block skew-x-[12deg] font-black tracking-widest drop-shadow-[0_0_2px_currentColor]">PREDICT</span>
+</button>
+</div>
+<!-- Team B Selection -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-secondary-container uppercase text-right block drop-shadow-[0_0_5px_rgba(0,224,255,0.5)]">Team B Selection</label>
+<div class="relative">
+<select class="w-full bg-[#09090b] border border-secondary-container text-on-background font-label-caps py-4 px-4 appearance-none focus:outline-none focus:shadow-[0_0_15px_rgba(0,224,255,0.5)] transition-shadow">
+<option>SELECT TEAM BETA</option>
+<option>MUNICH GIANTS</option>
+<option>PARIS SAINTS</option>
+<option>MILAN DEVILS</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary-container">expand_more</span>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-secondary-container/30 mt-4">
+<div class="text-center">
+<div class="font-stat-sm text-stat-sm text-text-muted uppercase">FORM (LAST 5)</div>
+<div class="flex gap-1 mt-1">
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+<span class="w-2 h-2 bg-danger-red shadow-[0_0_5px_#FF4B4B]"></span>
+<span class="w-2 h-2 bg-danger-red shadow-[0_0_5px_#FF4B4B]"></span>
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+<span class="w-2 h-2 bg-primary-container shadow-[0_0_5px_#00ff85]"></span>
+</div>
+</div>
+<div class="text-center">
+<div class="font-stat-sm text-stat-sm text-text-muted uppercase">HISTORICAL ELO</div>
+<div class="font-stat-lg text-stat-lg drop-shadow-[0_0_5px_currentColor]">1795</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Probabilities Visualization -->
+<div class="mt-12 space-y-4">
+<div class="flex justify-between font-label-caps text-label-caps">
+<span class="text-primary-container drop-shadow-[0_0_5px_rgba(0,255,133,0.8)]">WIN 45%</span>
+<span class="text-text-muted">DRAW 25%</span>
+<span class="text-secondary-container drop-shadow-[0_0_5px_rgba(0,224,255,0.8)]">LOSS 30%</span>
+</div>
+<div class="h-4 w-full flex bg-[#09090b] border border-outline-variant shadow-[0_0_10px_rgba(255,255,255,0.05)]">
+<div class="h-full bg-primary-container shadow-[0_0_15px_#00ff85]" style="width: 45%"></div>
+<div class="h-full bg-zinc-800" style="width: 25%"></div>
+<div class="h-full bg-secondary-container shadow-[0_0_15px_#00e0ff]" style="width: 30%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section class="relative z-20 py-16">
+<div class="max-w-max-width mx-auto px-margin-desktop">
+<!-- Section Header -->
+<div class="mb-12">
+<h2 class="font-display-lg text-headline-lg uppercase tracking-tighter text-on-background drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">SPATIAL xG ANALYTICS</h2>
+<div class="w-48 h-[2px] bg-primary-container shadow-[0_0_15px_#00ff85] mt-2"></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Pitch Schematic -->
+<div class="lg:col-span-8 bg-[#0a0f0d] border border-outline-variant relative h-[500px] overflow-hidden rounded-lg">
+<!-- Pitch Lines (Light Piping) -->
+<div class="absolute inset-4 border-2 border-primary-container/40 rounded-sm shadow-[0_0_10px_rgba(0,255,133,0.1)]">
+<!-- Center Line -->
+<div class="absolute left-1/2 top-0 bottom-0 w-[2px] bg-primary-container/40 -translate-x-1/2"></div>
+<!-- Center Circle -->
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-primary-container/40 rounded-full"></div>
+<!-- Penalty Area Left -->
+<div class="absolute left-0 top-1/4 bottom-1/4 w-32 border-r-2 border-y-2 border-secondary-container/40"></div>
+<!-- Penalty Area Right -->
+<div class="absolute right-0 top-1/4 bottom-1/4 w-32 border-l-2 border-y-2 border-secondary-container/40"></div>
+</div>
+<!-- Heat Zones -->
+<div class="absolute top-[40%] left-[70%] w-6 h-6 bg-danger-red rounded-full shadow-[0_0_15px_#FF4B4B] opacity-80 animate-pulse"></div>
+<div class="absolute top-[40%] left-[70%] w-20 h-20 -translate-x-1/3 -translate-y-1/3 bg-[radial-gradient(circle,_rgba(255,75,75,0.3)_0%,_transparent_70%)] pointer-events-none"></div>
+<div class="absolute top-[60%] left-[80%] w-5 h-5 bg-tertiary-container rounded-full shadow-[0_0_15px_#ffdc49] opacity-80"></div>
+<div class="absolute top-[60%] left-[80%] w-16 h-16 -translate-x-1/3 -translate-y-1/3 bg-[radial-gradient(circle,_rgba(255,220,73,0.3)_0%,_transparent_70%)] pointer-events-none"></div>
+<div class="absolute top-[30%] left-[20%] w-4 h-4 bg-secondary-container rounded-full shadow-[0_0_15px_#00e0ff] opacity-80"></div>
+<div class="absolute bottom-4 left-4 font-label-caps text-[10px] text-text-muted">
+          SYSTEM_STATUS: SPATIAL_MAPPING_ACTIVE
+        </div>
+</div>
+<!-- Stat Cards -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Forwards Card -->
+<div class="bg-[#0f1412] border-l-4 border-primary-container p-6 shadow-[0_0_20px_rgba(0,255,133,0.1)]">
+<h3 class="font-display-lg text-2xl italic skew-x-[-12deg] text-primary-container mb-4">FORWARDS</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<span class="font-label-caps text-text-muted">xG CONVERSION</span>
+<span class="font-stat-lg text-primary-container skew-x-[-12deg]">1.24</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest">
+<div class="h-full bg-primary-container" style="width: 75%"></div>
+</div>
+</div>
+</div>
+<!-- Midfielders Card -->
+<div class="bg-[#0f1412] border-l-4 border-secondary-container p-6 shadow-[0_0_20px_rgba(0,224,255,0.1)]">
+<h3 class="font-display-lg text-2xl italic skew-x-[-12deg] text-secondary-container mb-4">MIDFIELDERS</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<span class="font-label-caps text-text-muted">xG CONVERSION</span>
+<span class="font-stat-lg text-secondary-container skew-x-[-12deg]">0.89</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest">
+<div class="h-full bg-secondary-container" style="width: 55%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section class="relative z-20 py-16"><div class="max-w-max-width mx-auto px-margin-desktop"><div class="mb-12"><h2 class="font-display-lg text-headline-lg uppercase tracking-tighter text-on-background drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">PENALTY SIMULATOR ENGINE</h2><div class="w-48 h-[2px] bg-secondary-container shadow-[0_0_15px_#00e0ff] mt-2"></div></div><div class="bg-[#09090b] neoclassical-frame relative overflow-hidden"><div class="neoclassical-inner p-8"><div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12"><div><label class="font-label-caps text-label-caps text-secondary-container uppercase mb-2 block">Select Kicker</label><select class="w-full bg-[#1c211e] border border-outline-variant text-on-background font-label-caps py-4 px-4 appearance-none focus:outline-none focus:border-secondary-container transition-all"><option>K. MBAPPE</option><option>H. KANE</option><option>L. MESSI</option></select></div><div><label class="font-label-caps text-label-caps text-secondary-container uppercase mb-2 block">Select Keeper</label><select class="w-full bg-[#1c211e] border border-outline-variant text-on-background font-label-caps py-4 px-4 appearance-none focus:outline-none focus:border-secondary-container transition-all"><option>T. COURTOIS</option><option>M. MAIGNAN</option><option>E. MARTINEZ</option></select></div></div><div class="relative aspect-[21/9] w-full border-x-4 border-t-4 border-[#a5eeff] shadow-[0_0_30px_rgba(0,224,255,0.3)] bg-pitch-green-dark overflow-hidden rounded-t-lg"><div class="absolute inset-0 grid grid-cols-3 grid-rows-2"><div class="group relative border border-secondary-container/20 hover:bg-danger-red/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-danger-red skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">87% SCORE</span></div><div class="group relative border border-secondary-container/20 hover:bg-secondary-container/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-secondary-container skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">42% SAVE</span></div><div class="group relative border border-secondary-container/20 hover:bg-danger-red/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-danger-red skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">91% SCORE</span></div><div class="group relative border border-secondary-container/20 hover:bg-secondary-container/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-secondary-container skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">65% SAVE</span></div><div class="group relative border border-secondary-container/20 hover:bg-danger-red/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-danger-red skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">78% SCORE</span></div><div class="group relative border border-secondary-container/20 hover:bg-secondary-container/20 transition-all cursor-crosshair flex items-center justify-center"><span class="opacity-0 group-hover:opacity-100 font-stat-sm text-secondary-container skew-x-[-12deg] drop-shadow-[0_0_5px_currentColor]">50% SAVE</span></div></div></div></div></div></div></section>
+<footer class="bg-surface-container-lowest border-t border-outline-variant relative py-12 px-margin-desktop"><div class="max-w-max-width mx-auto flex flex-col md:flex-row justify-between items-center gap-8"><div class="flex-1"></div><div class="font-display-lg text-2xl font-black italic tracking-tighter text-text-muted skew-x-[-12deg] select-none">PRJCT//26</div><div class="flex-1 flex justify-end items-center gap-2 font-label-caps text-[10px] text-text-muted tracking-widest"><span class="w-2 h-2 bg-primary-container rounded-full animate-pulse shadow-[0_0_8px_#00ff85]"></span> SYSTEM ONLINE // MODELS ACTIVE</div></div><div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: linear-gradient(#00ff85 1px, transparent 1px), linear-gradient(90deg, #00ff85 1px, transparent 1px); background-size: 20px 20px;"></div></footer></body></html>
