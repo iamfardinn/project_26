@@ -182,7 +182,13 @@ TEAM_REGIONS = {
     'Colombia': 'LatinAmerican', 'Uzbekistan': 'Asian', 'DR Congo': 'African',
     'Ghana': 'African', 'Panama': 'LatinAmerican', 'Switzerland': 'European',
     'Czechia': 'European', 'Bosnia and Herzegovina': 'European', 'Qatar': 'Arab',
-    'South Korea': 'Asian', 'Scotland': 'English'
+    'South Korea': 'Asian', 'Scotland': 'English',
+    # Real squads regions
+    'France': 'European', 'Argentina': 'LatinAmerican', 'Brazil': 'LatinAmerican',
+    'England': 'English', 'Portugal': 'European', 'Spain': 'European',
+    'Germany': 'European', 'Netherlands': 'European', 'Norway': 'European',
+    'Uruguay': 'LatinAmerican', 'USA': 'English', 'Canada': 'English',
+    'Mexico': 'LatinAmerican', 'Croatia': 'European'
 }
 
 def generate_player(team, position, index, region, team_tier):
@@ -241,29 +247,45 @@ def main():
         'Bosnia and Herzegovina': 'C', 'Ivory Coast': 'C', 'Algeria': 'C', 'Uzbekistan': 'C',
         'Tunisia': 'C', 'South Africa': 'C', 'DR Congo': 'C', 'Saudi Arabia': 'C',
         'Haiti': 'D', 'Curacao': 'D', 'Panama': 'D', 'Iraq': 'D', 'Qatar': 'D',
-        'Jordan': 'D', 'New Zealand': 'D', 'Cape Verde': 'D'
+        'Jordan': 'D', 'New Zealand': 'D', 'Cape Verde': 'D',
+        # Real squads tiers
+        'France': 'A', 'Argentina': 'A', 'Brazil': 'A', 'England': 'A', 'Portugal': 'A',
+        'Spain': 'A', 'Germany': 'A', 'Netherlands': 'B', 'Norway': 'B', 'Uruguay': 'B',
+        'USA': 'B', 'Canada': 'B', 'Mexico': 'B', 'Croatia': 'B'
     }
     
     for team in TEAMS_LIST:
+        region = TEAM_REGIONS.get(team, 'European')
+        tier = team_tiers.get(team, 'C')
+        used_names = set()
+        
         if team in REAL_SQUADS:
-            squads_db[team] = REAL_SQUADS[team]
+            squad = list(REAL_SQUADS[team])
+            for p in squad:
+                used_names.add(p['name'])
+            
+            # Fill up to 11 players
+            while len(squad) < 11:
+                pos = random.choice(['FW', 'MF', 'DF'])
+                player = generate_player(team, pos, len(squad) + 1, region, tier)
+                if player['name'] not in used_names:
+                    squad.append(player)
+                    used_names.add(player['name'])
         else:
-            region = TEAM_REGIONS.get(team, 'European')
-            tier = team_tiers.get(team, 'C')
+            squad = []
+            # Generate 11 players: 3 FW, 4 MF, 3 DF, 1 GK
+            positions = ['FW', 'FW', 'FW', 'MF', 'MF', 'MF', 'MF', 'DF', 'DF', 'DF', 'GK']
+            for i, pos in enumerate(positions):
+                while True:
+                    player = generate_player(team, pos, i + 1, region, tier)
+                    if player['name'] not in used_names:
+                        squad.append(player)
+                        used_names.add(player['name'])
+                        break
             
-            # Generate 6 players: 2 FW, 2 MF, 1 DF, 1 GK
-            squad = [
-                generate_player(team, 'FW', 1, region, tier),
-                generate_player(team, 'FW', 2, region, tier),
-                generate_player(team, 'MF', 1, region, tier),
-                generate_player(team, 'MF', 2, region, tier),
-                generate_player(team, 'DF', 1, region, tier),
-                generate_player(team, 'GK', 1, region, tier)
-            ]
-            
-            # Ensure index 0 has the highest goal scorer for Golden Boot predictions
-            squad.sort(key=lambda p: (p['position'] != 'FW', -p['goals']))
-            squads_db[team] = squad
+        # Ensure index 0 has the highest goal scorer for Golden Boot predictions
+        squad.sort(key=lambda p: (p['position'] != 'FW', -p['goals']))
+        squads_db[team] = squad
 
     # Save to JSON in data/raw
     output_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'raw')

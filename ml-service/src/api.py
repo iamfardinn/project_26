@@ -323,11 +323,40 @@ def predict_xg(req: XGRequest):
     # XGBoost outputs probability list of shapes [N, 2]
     prob = float(model.predict_proba(features)[0][1])
 
+    # Apply physical distance constraints to prevent decision tree extrapolation errors
+    if tech == "Backheel":
+        if dist > 15.0:
+            prob = 0.0
+        elif dist > 8.0:
+            prob *= (15.0 - dist) / 7.0
+            
+    if bp == "Head" or tech == "Diving Header":
+        if dist > 25.0:
+            prob = 0.0
+        elif dist > 15.0:
+            prob *= (25.0 - dist) / 10.0
+
+    if dist > 45.0:
+        prob = 0.0
+    elif dist > 30.0:
+        prob *= (45.0 - dist) / 15.0
+
     return {
         "distance": dist,
         "angle_deg": angle,
         "xg": prob
     }
+
+
+def find_player_stats(player_name: str):
+    name_upper = player_name.upper().strip()
+    for team, players in squads_db.items():
+        for p in players:
+            p_name = p["name"].upper().strip()
+            # Match exact name or partial name
+            if p_name == name_upper or name_upper in p_name or p_name in name_upper:
+                return p
+    return None
 
 
 @app.post("/predict/penalty")
@@ -336,14 +365,14 @@ def predict_penalty(req: PenaltyRequest):
         raise HTTPException(status_code=503, detail="Penalty Simulator model is not loaded")
 
     # 1. Map names to attributes (Messi, Mbappe, Courtois, Martinez, etc.)
-    # Kicker power and accuracy
+    # Kicker power and accuracy fallbacks
     kickers_db = {
         "K. MBAPPE":   {"power": 88.0, "accuracy": 87.0},
         "H. KANE":     {"power": 87.0, "accuracy": 88.0},
         "L. MESSI":     {"power": 84.0, "accuracy": 92.0},
         "C. RONALDO":   {"power": 90.0, "accuracy": 86.0}
     }
-    # Keeper reach and reflexes
+    # Keeper reach and reflexes fallbacks
     keepers_db = {
         "T. COURTOIS":  {"reach": 91.0, "reflexes": 88.0},
         "M. MAIGNAN":   {"reach": 86.0, "reflexes": 89.0},
@@ -351,8 +380,23 @@ def predict_penalty(req: PenaltyRequest):
         "A. ONANA":     {"reach": 87.0, "reflexes": 90.0}
     }
 
-    k_stats = kickers_db.get(req.kicker_name.upper(), {"power": 85.0, "accuracy": 85.0})
-    g_stats = keepers_db.get(req.keeper_name.upper(), {"reach": 85.0, "reflexes": 85.0})
+    k_stats = None
+    kicker_info = find_player_stats(req.kicker_name)
+    if kicker_info:
+        k_power = float(max(60.0, min(99.0, kicker_info["rating"] * 0.9 + kicker_info["goals"] * 0.3)))
+        k_acc = float(max(60.0, min(99.0, kicker_info["rating"] * 0.95)))
+        k_stats = {"power": k_power, "accuracy": k_acc}
+    else:
+        k_stats = kickers_db.get(req.kicker_name.upper(), {"power": 85.0, "accuracy": 85.0})
+
+    g_stats = None
+    keeper_info = find_player_stats(req.keeper_name)
+    if keeper_info:
+        g_reach = float(max(60.0, min(99.0, keeper_info["rating"] * 0.95)))
+        g_refl = float(max(60.0, min(99.0, keeper_info["rating"] * 0.9 + keeper_info["form"] * 1.2)))
+        g_stats = {"reach": g_reach, "reflexes": g_refl}
+    else:
+        g_stats = keepers_db.get(req.keeper_name.upper(), {"reach": 85.0, "reflexes": 85.0})
 
     scaler = penalty_model_bundle["scaler"]
 
