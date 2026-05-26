@@ -1,0 +1,12 @@
+venv/
+data/raw/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.env
+notebooks/
+.system_generated/
+*.ipynb

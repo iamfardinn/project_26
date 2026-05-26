@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 1. Machine Learning Engine (FastAPI)
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: project_26_ml_service
+    ports:
+      - "8000:8000"
+    restart: always
+
+  # 2. Database Server (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: project_26_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: world_cup_analytics
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  # 3. Gateway Server (Express API)
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: project_26_gateway
+    ports:
+      - "5000:5000"
+    environment:
+      ML_SERVICE_URL: http://ml-service:8000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: world_cup_analytics
+    depends_on:
+      - ml-service
+      - db
+    restart: always
+
+volumes:
+  pgdata:
+    driver: local
