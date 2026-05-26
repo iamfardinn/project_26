@@ -1,0 +1,22 @@
+# Python environment
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.env
+
+# Data (too large for git)
+data/raw/
+data/processed/
+
+# Saved models (too large for git)
+models/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+*.ipynb
+
+# Kaggle credentials
+kaggle.json
+.kaggle/
