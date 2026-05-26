@@ -48,6 +48,8 @@ PROCESSED_DIR = os.path.join(SRC_DIR, "..", "data", "processed")
 # Pre-cached team statistics
 elo_dict = {}
 team_stats = {}
+squads_db = {}
+squad_stats = {}
 
 # Label Encoder category lookups (as verified from training set)
 BODY_PARTS = ["Head", "Left Foot", "Other", "Right Foot"]
@@ -77,7 +79,35 @@ class PenaltyMLP(nn.Module):
 
 @app.on_event("startup")
 def startup_event():
-    global elo_dict, team_stats, match_model_bundle, xg_model_bundle, penalty_model_bundle, penalty_nn
+    global elo_dict, team_stats, match_model_bundle, xg_model_bundle, penalty_model_bundle, penalty_nn, squads_db, squad_stats
+
+    # Load 48-team squads database
+    try:
+        import json
+        squads_path = os.path.join(SRC_DIR, "..", "data", "raw", "squads_db.json")
+        if os.path.exists(squads_path):
+            with open(squads_path, "r", encoding="utf-8") as f:
+                squads_db = json.load(f)
+            logger.info(f"Loaded squads database for {len(squads_db)} teams")
+            
+            # Precompute squad statistics
+            for team, players in squads_db.items():
+                if not players:
+                    continue
+                ratings = [p["rating"] for p in players]
+                forms = [p["form"] for p in players]
+                goals = [p["goals"] for p in players]
+                assists = [p["assists"] for p in players]
+                squad_stats[team] = {
+                    "avg_rating": sum(ratings) / len(ratings),
+                    "avg_form": sum(forms) / len(forms),
+                    "total_goals": sum(goals),
+                    "total_assists": sum(assists)
+                }
+        else:
+            logger.warning(f"squads_db.json not found at {squads_path}")
+    except Exception as e:
+        logger.error(f"Failed to load squads database: {e}")
 
     # 1. Load team ELO and form stats
     try:
@@ -196,6 +226,11 @@ def get_teams():
     ]
 
 
+@app.get("/squads")
+def get_squads():
+    return squads_db
+
+
 @app.post("/predict/match")
 def predict_match(req: MatchRequest):
     if not match_model_bundle:
@@ -213,9 +248,19 @@ def predict_match(req: MatchRequest):
     home_goals = team_stats.get(req.home_team, {}).get("goals_avg", 1.0)
     away_goals = team_stats.get(req.away_team, {}).get("goals_avg", 1.0)
 
-    # Scale features
+    # Compute squad features
+    h_squad = squad_stats.get(req.home_team, {"avg_rating": 75.0, "avg_form": 7.5, "total_goals": 5, "total_assists": 3})
+    a_squad = squad_stats.get(req.away_team, {"avg_rating": 75.0, "avg_form": 7.5, "total_goals": 5, "total_assists": 3})
+
+    squad_rating_diff = h_squad["avg_rating"] - a_squad["avg_rating"]
+    squad_goals_diff = h_squad["total_goals"] - a_squad["total_goals"]
+    squad_assists_diff = h_squad["total_assists"] - a_squad["total_assists"]
+    squad_form_diff = h_squad["avg_form"] - a_squad["avg_form"]
+
+    # Scale features (11 features total)
     features = np.array([[
-        elo_diff, home_form, away_form, form_diff, home_goals, away_goals, int(req.is_neutral)
+        elo_diff, home_form, away_form, form_diff, home_goals, away_goals, int(req.is_neutral),
+        squad_rating_diff, squad_goals_diff, squad_assists_diff, squad_form_diff
     ]])
     scaler = match_model_bundle["scaler"]
     features_scaled = scaler.transform(features)

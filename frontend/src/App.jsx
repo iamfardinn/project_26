@@ -5,6 +5,7 @@ import MatchOutcomeEngine from './components/MatchOutcomeEngine'
 import SpatialXGAnalytics from './components/SpatialXGAnalytics'
 import PenaltySimulator from './components/PenaltySimulator'
 import TournamentBracket from './components/TournamentBracket'
+import SquadsViewer from './components/SquadsViewer'
 import Footer from './components/Footer'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
       <SpatialXGAnalytics />
       <PenaltySimulator />
       <TournamentBracket />
+      <SquadsViewer />
       <Footer />
     </div>
   )

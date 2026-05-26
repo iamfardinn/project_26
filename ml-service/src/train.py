@@ -41,7 +41,8 @@ def train_model1():
 
     features = [
         "elo_diff", "home_form", "away_form", "form_diff",
-        "home_goals_avg", "away_goals_avg", "is_neutral"
+        "home_goals_avg", "away_goals_avg", "is_neutral",
+        "squad_rating_diff", "squad_goals_diff", "squad_assists_diff", "squad_form_diff"
     ]
     X = df[features]
     y = df["result"]  # W, D, L

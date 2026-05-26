@@ -22,6 +22,8 @@ Model 3 — Penalty Simulator (XGBoost / PyTorch)
 
 import logging
 import math
+import json
+import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
@@ -105,6 +107,36 @@ def _penalty_quadrant(end_loc: list | None) -> int:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def load_squad_stats():
+    """Load and calculate squad aggregates from raw player data."""
+    squads_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "squads_db.json")
+    if not os.path.exists(squads_path):
+        return {}
+    try:
+        with open(squads_path, "r", encoding="utf-8") as f:
+            squads = json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to load squads_db.json: {e}")
+        return {}
+    
+    squad_stats = {}
+    for team, players in squads.items():
+        if not players:
+            continue
+        ratings = [p["rating"] for p in players]
+        forms = [p["form"] for p in players]
+        goals = [p["goals"] for p in players]
+        assists = [p["assists"] for p in players]
+        
+        squad_stats[team] = {
+            "avg_rating": sum(ratings) / len(ratings),
+            "avg_form": sum(forms) / len(forms),
+            "total_goals": sum(goals),
+            "total_assists": sum(assists)
+        }
+    return squad_stats
+
+
 def build_model1_features(match_elo_df: pd.DataFrame) -> pd.DataFrame:
     """
     Build the feature matrix for Model 1 (Match Outcome Predictor).
@@ -115,10 +147,13 @@ def build_model1_features(match_elo_df: pd.DataFrame) -> pd.DataFrame:
 
     Output: DataFrame with columns:
             elo_diff, home_form, away_form, home_goals_avg, away_goals_avg,
-            is_neutral, result
+            is_neutral, squad_rating_diff, squad_goals_diff, squad_assists_diff,
+            squad_form_diff, result
     """
-    logger.info("Building Model 1 features...")
+    logger.info("Building Model 1 features (vectorized)...")
     records = []
+
+    squad_stats = load_squad_stats()
 
     df = match_elo_df.sort_values("date").reset_index(drop=True)
 
@@ -134,24 +169,65 @@ def build_model1_features(match_elo_df: pd.DataFrame) -> pd.DataFrame:
 
     all_games = pd.concat([home_df, away_df]).sort_values("date").reset_index(drop=True)
 
-    for _, row in df.iterrows():
-        home_form = _rolling_form(all_games, "team", "form_result", row["home_team"], row["date"])
-        away_form = _rolling_form(all_games, "team", "form_result", row["away_team"], row["date"])
-        home_goals = _rolling_goals(all_games, "team", "goals_scored", row["home_team"], row["date"])
-        away_goals = _rolling_goals(all_games, "team", "goals_scored", row["away_team"], row["date"])
+    # Compute rolling form and goals in a vectorized way
+    all_games["pts"] = all_games["form_result"].map({"W": 3, "D": 1, "L": 0})
+    
+    # Group by team and shift to get previous match stats
+    grouped = all_games.groupby("team")
+    all_games["prev_pts"] = grouped["pts"].shift(1)
+    all_games["prev_goals"] = grouped["goals_scored"].shift(1)
+    
+    # Rolling sums and means (excluding current match because of shift)
+    all_games["form"] = all_games.groupby("team")["prev_pts"].rolling(window=5, min_periods=1).sum().reset_index(level=0, drop=True) / 15.0
+    all_games["goals_avg"] = all_games.groupby("team")["prev_goals"].rolling(window=5, min_periods=1).mean().reset_index(level=0, drop=True)
+    
+    # Fill NaNs with priors
+    all_games["form"] = all_games["form"].fillna(0.5)
+    all_games["goals_avg"] = all_games["goals_avg"].fillna(1.0)
+
+    # Merge back to the match dataframe
+    lookup = all_games[["date", "team", "form", "goals_avg"]]
+    
+    # Join for home team
+    df_merged = df.merge(lookup, left_on=["date", "home_team"], right_on=["date", "team"], how="left")
+    df_merged = df_merged.rename(columns={"form": "home_form", "goals_avg": "home_goals_avg"}).drop(columns=["team"])
+    
+    # Join for away team
+    df_merged = df_merged.merge(lookup, left_on=["date", "away_team"], right_on=["date", "team"], how="left")
+    df_merged = df_merged.rename(columns={"form": "away_form", "goals_avg": "away_goals_avg"}).drop(columns=["team"])
+
+    # Fill any remaining NaNs in features
+    df_merged["home_form"] = df_merged["home_form"].fillna(0.5)
+    df_merged["away_form"] = df_merged["away_form"].fillna(0.5)
+    df_merged["home_goals_avg"] = df_merged["home_goals_avg"].fillna(1.0)
+    df_merged["away_goals_avg"] = df_merged["away_goals_avg"].fillna(1.0)
+
+    for _, row in df_merged.iterrows():
+        # Fetch squad features with fallback priors
+        h_squad = squad_stats.get(row["home_team"], {"avg_rating": 75.0, "avg_form": 7.5, "total_goals": 5, "total_assists": 3})
+        a_squad = squad_stats.get(row["away_team"], {"avg_rating": 75.0, "avg_form": 7.5, "total_goals": 5, "total_assists": 3})
+
+        rating_diff = h_squad["avg_rating"] - a_squad["avg_rating"]
+        goals_diff = h_squad["total_goals"] - a_squad["total_goals"]
+        assists_diff = h_squad["total_assists"] - a_squad["total_assists"]
+        squad_form_diff = h_squad["avg_form"] - a_squad["avg_form"]
 
         records.append({
-            "date":           row["date"],
-            "home_team":      row["home_team"],
-            "away_team":      row["away_team"],
-            "elo_diff":       row["elo_diff"],
-            "home_form":      home_form,
-            "away_form":      away_form,
-            "form_diff":      home_form - away_form,
-            "home_goals_avg": home_goals,
-            "away_goals_avg": away_goals,
-            "is_neutral":     int(row.get("neutral", False)),
-            "result":         row["result"],           # W / D / L
+            "date":               row["date"],
+            "home_team":          row["home_team"],
+            "away_team":          row["away_team"],
+            "elo_diff":           row["elo_diff"],
+            "home_form":          row["home_form"],
+            "away_form":          row["away_form"],
+            "form_diff":          row["home_form"] - row["away_form"],
+            "home_goals_avg":     row["home_goals_avg"],
+            "away_goals_avg":     row["away_goals_avg"],
+            "is_neutral":         int(row.get("neutral", False)),
+            "squad_rating_diff":  rating_diff,
+            "squad_goals_diff":   goals_diff,
+            "squad_assists_diff": assists_diff,
+            "squad_form_diff":    squad_form_diff,
+            "result":             row["result"],           # W / D / L
         })
 
     out = pd.DataFrame(records)

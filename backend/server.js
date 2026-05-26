@@ -53,6 +53,17 @@ app.get('/api/teams', async (req, res) => {
   }
 });
 
+// 1.6. Proxy squads list
+app.get('/api/squads', async (req, res) => {
+  try {
+    const mlRes = await axios.get(`${ML_SERVICE_URL}/squads`);
+    res.json(mlRes.data);
+  } catch (error) {
+    console.error('Failed to proxy /api/squads:', error.message);
+    res.status(500).json({ error: 'Failed to fetch squads list' });
+  }
+});
+
 // 2. Proxy match outcome prediction
 app.post('/api/predict/match', async (req, res) => {
   try {
@@ -129,17 +140,7 @@ const groupsData = {
   L: ['England', 'Croatia', 'Ghana', 'Panama']
 };
 
-const teamSquads = {
-  France: [{ name: 'Kylian Mbappé', position: 'FW', club: 'Real Madrid', goals: 42, assists: 15, rating: 94 }, { name: 'Antoine Griezmann', position: 'MF', club: 'Atletico Madrid', goals: 12, assists: 10, rating: 87 }],
-  Argentina: [{ name: 'Lionel Messi', position: 'FW', club: 'Inter Miami', goals: 32, assists: 25, rating: 93 }, { name: 'Julian Alvarez', position: 'FW', club: 'Man City', goals: 19, assists: 10, rating: 86 }],
-  England: [{ name: 'Harry Kane', position: 'FW', club: 'Bayern Munich', goals: 36, assists: 10, rating: 91 }, { name: 'Jude Bellingham', position: 'MF', club: 'Real Madrid', goals: 25, assists: 15, rating: 92 }],
-  Portugal: [{ name: 'Cristiano Ronaldo', position: 'FW', club: 'Al Nassr', goals: 35, assists: 11, rating: 88 }, { name: 'Bruno Fernandes', position: 'MF', club: 'Man United', goals: 15, assists: 15, rating: 89 }],
-  Brazil: [{ name: 'Vinicius Jr', position: 'FW', club: 'Real Madrid', goals: 24, assists: 12, rating: 91 }, { name: 'Rodrygo', position: 'FW', club: 'Real Madrid', goals: 18, assists: 10, rating: 87 }],
-  Norway: [{ name: 'Erling Haaland', position: 'FW', club: 'Man City', goals: 38, assists: 8, rating: 92 }, { name: 'Martin Odegaard', position: 'MF', club: 'Arsenal', goals: 14, assists: 12, rating: 88 }],
-  Spain: [{ name: 'Lamine Yamal', position: 'FW', club: 'Barcelona', goals: 12, assists: 14, rating: 85 }, { name: 'Rodri', position: 'MF', club: 'Man City', goals: 10, assists: 12, rating: 90 }]
-};
-
-const simulateMatch = async (teamA, teamB, deterministic = false, isGroupStage = false) => {
+const simulateMatch = async (teamA, teamB, squads = {}, deterministic = false, isGroupStage = false) => {
   const mlRes = await axios.post(`${ML_SERVICE_URL}/predict/match`, {
     home_team: teamA,
     away_team: teamB,
@@ -148,12 +149,12 @@ const simulateMatch = async (teamA, teamB, deterministic = false, isGroupStage =
   
   let { home_win_prob, draw_prob, away_win_prob, home_elo, away_elo, home_goals_avg, away_goals_avg } = mlRes.data;
   
-  if (teamSquads[teamA]) {
-    const avgRating = teamSquads[teamA].reduce((acc, p) => acc + p.rating, 0) / teamSquads[teamA].length;
+  if (squads[teamA]) {
+    const avgRating = squads[teamA].reduce((acc, p) => acc + p.rating, 0) / squads[teamA].length;
     home_elo += (avgRating - 80) * 5;
   }
-  if (teamSquads[teamB]) {
-    const avgRating = teamSquads[teamB].reduce((acc, p) => acc + p.rating, 0) / teamSquads[teamB].length;
+  if (squads[teamB]) {
+    const avgRating = squads[teamB].reduce((acc, p) => acc + p.rating, 0) / squads[teamB].length;
     away_elo += (avgRating - 80) * 5;
   }
 
@@ -233,6 +234,15 @@ const simulateMatch = async (teamA, teamB, deterministic = false, isGroupStage =
 app.post('/api/simulate/tournament', async (req, res) => {
   try {
     const { deterministic } = req.body;
+
+    // Fetch dynamic squads from ML Service
+    let squads = {};
+    try {
+      const squadsRes = await axios.get(`${ML_SERVICE_URL}/squads`);
+      squads = squadsRes.data;
+    } catch (err) {
+      console.error('Failed to fetch squads for simulation:', err.message);
+    }
     
     const groupResults = {};
     const thirdPlaceTeams = [];
@@ -248,7 +258,7 @@ app.post('/api/simulate/tournament', async (req, res) => {
       
       const groupMatches = [];
       for (const [tA, tB] of matchesToPlay) {
-        const match = await simulateMatch(tA, tB, deterministic, true);
+        const match = await simulateMatch(tA, tB, squads, deterministic, true);
         groupMatches.push(match);
         allMatches.push(match);
         
@@ -300,7 +310,7 @@ app.post('/api/simulate/tournament', async (req, res) => {
       { id: 'R32_16', teamA: get1st('K'), teamB: get1st('L') }
     ];
     
-    const r32Matches = await Promise.all(r32Matchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
+    const r32Matches = await Promise.all(r32Matchups.map(m => simulateMatch(m.teamA, m.teamB, squads, deterministic)));
     r32Matches.forEach(m => allMatches.push(m));
     
     const simNextRound = async (matches, idPrefix) => {
@@ -308,7 +318,7 @@ app.post('/api/simulate/tournament', async (req, res) => {
       for (let i = 0; i < matches.length; i += 2) {
         nextMatchups.push({ id: `${idPrefix}_${i/2 + 1}`, teamA: matches[i].winner, teamB: matches[i+1].winner });
       }
-      const results = await Promise.all(nextMatchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
+      const results = await Promise.all(nextMatchups.map(m => simulateMatch(m.teamA, m.teamB, squads, deterministic)));
       results.forEach(m => allMatches.push(m));
       return results.map((m, idx) => ({ ...m, id: nextMatchups[idx].id }));
     };
@@ -320,8 +330,8 @@ app.post('/api/simulate/tournament', async (req, res) => {
     const loserSF1 = sfMatches[0].home_team === sfMatches[0].winner ? sfMatches[0].away_team : sfMatches[0].home_team;
     const loserSF2 = sfMatches[1].home_team === sfMatches[1].winner ? sfMatches[1].away_team : sfMatches[1].home_team;
     
-    const thirdMatch = await simulateMatch(loserSF1, loserSF2, deterministic);
-    const finalMatch = await simulateMatch(sfMatches[0].winner, sfMatches[1].winner, deterministic);
+    const thirdMatch = await simulateMatch(loserSF1, loserSF2, squads, deterministic);
+    const finalMatch = await simulateMatch(sfMatches[0].winner, sfMatches[1].winner, squads, deterministic);
     
     res.json({
       groups: groupResults,
@@ -333,7 +343,7 @@ app.post('/api/simulate/tournament', async (req, res) => {
       third_place: { ...thirdMatch, id: 'THIRD' },
       final: { ...finalMatch, id: 'FINAL' },
       champion: finalMatch.winner,
-      team_squads: teamSquads
+      team_squads: squads
     });
   } catch (error) {
     console.error('Tournament simulation failed:', error.message);
