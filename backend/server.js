@@ -136,49 +136,90 @@ const initialMatchups = [
   { id: 'M87', teamA: 'Morocco', teamB: 'Mexico' }
 ];
 
-const simulateMatch = async (teamA, teamB) => {
+const simulateMatch = async (teamA, teamB, deterministic = false) => {
   const mlRes = await axios.post(`${ML_SERVICE_URL}/predict/match`, {
     home_team: teamA,
     away_team: teamB,
     is_neutral: true
   });
   
-  const { home_win_prob, draw_prob, away_win_prob, home_elo, away_elo } = mlRes.data;
+  const { 
+    home_win_prob, 
+    draw_prob, 
+    away_win_prob, 
+    home_elo, 
+    away_elo,
+    home_goals_avg,
+    away_goals_avg
+  } = mlRes.data;
   
-  const r = Math.random();
   let winner = '';
   let scoreStr = '';
   let shootoutStr = '';
   
-  if (r < home_win_prob) {
-    winner = teamA;
-    const homeGoals = Math.floor(Math.random() * 3) + 1;
-    const awayGoals = Math.floor(Math.random() * homeGoals);
-    scoreStr = `${homeGoals}-${awayGoals}`;
-  } else if (r < home_win_prob + draw_prob) {
-    const goals = Math.floor(Math.random() * 3);
-    scoreStr = `${goals}-${goals}`;
-    
-    const eloDiff = home_elo - away_elo;
-    const homeShootoutProb = 1 / (1 + Math.exp(-eloDiff / 150));
-    const sr = Math.random();
-    
-    if (sr < homeShootoutProb) {
+  if (deterministic) {
+    // Predict champion based strictly on current Elo ratings and form stats
+    if (home_win_prob > away_win_prob) {
       winner = teamA;
-      const homePen = 5;
-      const awayPen = Math.floor(Math.random() * 3) + 2;
-      shootoutStr = `Pen: ${homePen}-${awayPen}`;
-    } else {
+      let homeGoals = Math.max(1, Math.round(home_goals_avg + (home_win_prob - away_win_prob) * 1.2));
+      let awayGoals = Math.max(0, Math.round(away_goals_avg - (home_win_prob - away_win_prob) * 0.8));
+      if (homeGoals <= awayGoals) {
+        homeGoals = awayGoals + 1;
+      }
+      homeGoals = Math.min(homeGoals, 5);
+      awayGoals = Math.min(awayGoals, homeGoals - 1);
+      scoreStr = `${homeGoals}-${awayGoals}`;
+    } else if (away_win_prob > home_win_prob) {
       winner = teamB;
-      const awayPen = 5;
-      const homePen = Math.floor(Math.random() * 3) + 2;
-      shootoutStr = `Pen: ${homePen}-${awayPen}`;
+      let awayGoals = Math.max(1, Math.round(away_goals_avg + (away_win_prob - home_win_prob) * 1.2));
+      let homeGoals = Math.max(0, Math.round(home_goals_avg - (away_win_prob - home_win_prob) * 0.8));
+      if (awayGoals <= homeGoals) {
+        awayGoals = homeGoals + 1;
+      }
+      awayGoals = Math.min(awayGoals, 5);
+      homeGoals = Math.min(homeGoals, awayGoals - 1);
+      scoreStr = `${homeGoals}-${awayGoals}`;
+    } else {
+      // Elo tie breaker
+      const homeWins = home_elo >= away_elo;
+      winner = homeWins ? teamA : teamB;
+      const goals = Math.min(Math.max(Math.round((home_goals_avg + away_goals_avg) / 2), 1), 3);
+      scoreStr = `${goals}-${goals}`;
+      shootoutStr = homeWins ? 'Pen: 5-4' : 'Pen: 4-5';
     }
   } else {
-    winner = teamB;
-    const awayGoals = Math.floor(Math.random() * 3) + 1;
-    const homeGoals = Math.floor(Math.random() * awayGoals);
-    scoreStr = `${homeGoals}-${awayGoals}`;
+    // Stochastic simulation
+    const r = Math.random();
+    if (r < home_win_prob) {
+      winner = teamA;
+      const homeGoals = Math.floor(Math.random() * 3) + 1;
+      const awayGoals = Math.floor(Math.random() * homeGoals);
+      scoreStr = `${homeGoals}-${awayGoals}`;
+    } else if (r < home_win_prob + draw_prob) {
+      const goals = Math.floor(Math.random() * 3);
+      scoreStr = `${goals}-${goals}`;
+      
+      const eloDiff = home_elo - away_elo;
+      const homeShootoutProb = 1 / (1 + Math.exp(-eloDiff / 150));
+      const sr = Math.random();
+      
+      if (sr < homeShootoutProb) {
+        winner = teamA;
+        const homePen = 5;
+        const awayPen = Math.floor(Math.random() * 3) + 2;
+        shootoutStr = `Pen: ${homePen}-${awayPen}`;
+      } else {
+        winner = teamB;
+        const awayPen = 5;
+        const homePen = Math.floor(Math.random() * 3) + 2;
+        shootoutStr = `Pen: ${awayPen}-${homePen}`;
+      }
+    } else {
+      winner = teamB;
+      const awayGoals = Math.floor(Math.random() * 3) + 1;
+      const homeGoals = Math.floor(Math.random() * awayGoals);
+      scoreStr = `${homeGoals}-${awayGoals}`;
+    }
   }
   
   return {
@@ -195,8 +236,10 @@ const simulateMatch = async (teamA, teamB) => {
 // 5. Proxy tournament simulation
 app.post('/api/simulate/tournament', async (req, res) => {
   try {
+    const { deterministic } = req.body;
+    
     // Round of 32 (16 matches)
-    const r32Matches = await Promise.all(initialMatchups.map(m => simulateMatch(m.teamA, m.teamB)));
+    const r32Matches = await Promise.all(initialMatchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
     
     // Round of 16 Matchups (8 matches)
     const r16Matchups = [
@@ -210,7 +253,7 @@ app.post('/api/simulate/tournament', async (req, res) => {
       { id: 'M95', teamA: r32Matches[12].winner, teamB: r32Matches[13].winner }, // W_M86 vs W_M88
       { id: 'M96', teamA: r32Matches[14].winner, teamB: r32Matches[15].winner }  // W_M85 vs W_M87
     ];
-    const r16Matches = await Promise.all(r16Matchups.map(m => simulateMatch(m.teamA, m.teamB)));
+    const r16Matches = await Promise.all(r16Matchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
     
     // Quarter-finals Matchups (4 matches)
     const qfMatchups = [
@@ -220,14 +263,14 @@ app.post('/api/simulate/tournament', async (req, res) => {
       { id: 'M99',  teamA: r16Matches[4].winner, teamB: r16Matches[5].winner }, // W_M91 vs W_M92
       { id: 'M100', teamA: r16Matches[6].winner, teamB: r16Matches[7].winner }  // W_M95 vs W_M96
     ];
-    const qfMatches = await Promise.all(qfMatchups.map(m => simulateMatch(m.teamA, m.teamB)));
+    const qfMatches = await Promise.all(qfMatchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
     
     // Semi-finals Matchups (2 matches)
     const sfMatchups = [
       { id: 'M101', teamA: qfMatches[0].winner, teamB: qfMatches[1].winner }, // W_M97 vs W_M98
       { id: 'M102', teamA: qfMatches[2].winner, teamB: qfMatches[3].winner }  // W_M99 vs W_M100
     ];
-    const sfMatches = await Promise.all(sfMatchups.map(m => simulateMatch(m.teamA, m.teamB)));
+    const sfMatches = await Promise.all(sfMatchups.map(m => simulateMatch(m.teamA, m.teamB, deterministic)));
     
     // Get losers for third place
     const getLoser = (match, winner) => (match.home_team === winner) ? match.away_team : match.home_team;
@@ -235,8 +278,8 @@ app.post('/api/simulate/tournament', async (req, res) => {
     const loserSF2 = getLoser(sfMatches[1], sfMatches[1].winner);
     
     // Finals Matchups (2 matches: Final & Third Place)
-    const finalMatch = await simulateMatch(sfMatches[0].winner, sfMatches[1].winner);
-    const thirdMatch = await simulateMatch(loserSF1, loserSF2);
+    const finalMatch = await simulateMatch(sfMatches[0].winner, sfMatches[1].winner, deterministic);
+    const thirdMatch = await simulateMatch(loserSF1, loserSF2, deterministic);
     
     res.json({
       round_of_32: r32Matches.map((m, idx) => ({ ...m, id: initialMatchups[idx].id })),

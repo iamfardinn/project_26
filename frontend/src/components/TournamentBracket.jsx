@@ -4,6 +4,7 @@ export default function TournamentBracket() {
   const [simulation, setSimulation] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [deterministic, setDeterministic] = useState(true) // Default to true (predict based on recent forms & stats only)
 
   const handleSimulate = async () => {
     setLoading(true)
@@ -11,7 +12,8 @@ export default function TournamentBracket() {
     try {
       const res = await fetch('http://localhost:5000/api/simulate/tournament', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deterministic })
       })
       if (!res.ok) throw new Error('Simulation failed')
       const data = await res.json()
@@ -91,15 +93,33 @@ export default function TournamentBracket() {
             </h2>
             <div className="w-56 h-[2px] bg-secondary-container shadow-[0_0_15px_#00e0ff] mt-2" />
           </div>
-          <button
-            onClick={handleSimulate}
-            disabled={loading}
-            className="bg-[#09090b] border border-secondary-container text-secondary-container hover:bg-secondary-container hover:text-[#09090b] disabled:opacity-50 font-label-caps text-label-caps px-8 py-4 skew-x-[-12deg] transform transition-all active:scale-95 shadow-[0_0_20px_rgba(0,224,255,0.3)] hover:shadow-[0_0_30px_rgba(0,224,255,0.6)] cursor-pointer"
-          >
-            <span className="block skew-x-[12deg] font-black tracking-widest">
-              {loading ? 'SIMULATING BRACKET...' : 'SIMULATE KNOCKOUT STAGE'}
-            </span>
-          </button>
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+            {/* Simulation Mode Toggle */}
+            <div className="flex bg-[#09090b] border border-outline-variant p-1 font-label-caps text-xs">
+              <button
+                onClick={() => setDeterministic(true)}
+                className={`px-4 py-2 cursor-pointer transition-all ${deterministic ? 'bg-secondary-container text-[#09090b] font-bold shadow-[0_0_10px_rgba(0,224,255,0.4)]' : 'text-text-muted hover:text-on-background'}`}
+              >
+                2026 STATS & FORM ONLY
+              </button>
+              <button
+                onClick={() => setDeterministic(false)}
+                className={`px-4 py-2 cursor-pointer transition-all ${!deterministic ? 'bg-secondary-container text-[#09090b] font-bold shadow-[0_0_10px_rgba(0,224,255,0.4)]' : 'text-text-muted hover:text-on-background'}`}
+              >
+                DYNAMIC CUP SIMULATOR
+              </button>
+            </div>
+
+            <button
+              onClick={handleSimulate}
+              disabled={loading}
+              className="bg-[#09090b] border border-secondary-container text-secondary-container hover:bg-secondary-container hover:text-[#09090b] disabled:opacity-50 font-label-caps text-label-caps px-8 py-4 skew-x-[-12deg] transform transition-all active:scale-95 shadow-[0_0_20px_rgba(0,224,255,0.3)] hover:shadow-[0_0_30px_rgba(0,224,255,0.6)] cursor-pointer"
+            >
+              <span className="block skew-x-[12deg] font-black tracking-widest">
+                {loading ? 'SIMULATING BRACKET...' : 'SIMULATE KNOCKOUT STAGE'}
+              </span>
+            </button>
+          </div>
         </div>
 
         {error && (

@@ -233,6 +233,10 @@ def predict_match(req: MatchRequest):
         "away_team": req.away_team,
         "home_elo": home_elo,
         "away_elo": away_elo,
+        "home_form": home_form,
+        "away_form": away_form,
+        "home_goals_avg": home_goals,
+        "away_goals_avg": away_goals,
         "home_win_prob": class_probs.get("W", 0.0),
         "draw_prob": class_probs.get("D", 0.0),
         "away_win_prob": class_probs.get("L", 0.0)
