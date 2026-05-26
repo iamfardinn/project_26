@@ -31,14 +31,6 @@ export default function TopAppBar() {
 
           {/* Desktop Trailing Actions */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
-            <div className="relative hidden lg:block">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" style={{ fontSize: '18px' }}>search</span>
-              <input
-                className="bg-[#09090b] border-b-2 border-outline-variant focus:border-primary-container text-on-surface pl-10 pr-4 py-2 w-44 transition-all focus:w-56 outline-none text-body-md font-body-md placeholder:text-text-muted"
-                placeholder="Search parameters..."
-                type="text"
-              />
-            </div>
             <div className="flex items-center gap-3 text-primary-container">
               <button className="hover:text-primary transition-colors">
                 <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>monitoring</span>

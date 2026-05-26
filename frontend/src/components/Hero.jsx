@@ -2,7 +2,19 @@ import React from 'react'
 
 export default function Hero() {
   return (
-    <main className="relative flex-grow flex items-center z-10 py-12 lg:py-0">
+    <main className="relative flex-grow flex items-center z-10 py-16 lg:py-24 min-h-[85vh] overflow-hidden bg-[#09090b]">
+      {/* Full-bleed Background Image Layer */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <img
+          src="/bg1.jpg"
+          alt="World Cup Champions Background"
+          className="w-full h-full object-cover object-center lg:object-right opacity-35 lg:opacity-45 select-none pointer-events-none"
+        />
+        {/* Soft radial and linear gradients to blend background and ensure text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-[#09090b]/30" />
+      </div>
+
       {/* Grid overlay */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div
@@ -14,10 +26,10 @@ export default function Hero() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-max-width mx-auto px-4 sm:px-6 lg:px-margin-desktop py-16 lg:py-24">
+      <div className="relative z-10 w-full max-w-max-width mx-auto px-4 sm:px-6 lg:px-margin-desktop">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-gutter items-center">
 
-          {/* Left Column */}
+          {/* Left Column (Text & CTAs) */}
           <div className="lg:col-span-6 flex flex-col items-start">
             {/* Badge */}
             <div className="border border-primary-container mb-6 lg:mb-8 flex items-center bg-[#09090b] p-1 shadow-[0_0_15px_rgba(0,255,133,0.3)]">
@@ -59,58 +71,28 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="lg:col-span-6 relative mt-8 lg:mt-0">
-            <div className="relative aspect-square w-full max-w-sm sm:max-w-md lg:max-w-[520px] mx-auto bg-[#09090b] neoclassical-frame group">
-              <div className="w-full h-full neoclassical-inner relative overflow-hidden">
-                {/* Scanline grid */}
-                <div
-                  className="absolute inset-0 z-10 pointer-events-none mix-blend-screen"
-                  style={{
-                    backgroundImage: 'linear-gradient(rgba(0,255,133,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,133,0.1) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                  }}
-                />
-                {/* Main image */}
-                <div className="absolute inset-0 bg-[#09090b] flex items-center justify-center overflow-hidden">
-                  <img
-                    alt="Technical Football Rendering"
-                    className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-1000 ease-out"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdw3D_6rf3UavZpHt4IL1jVD4eiQt1vCcPtLu8moeAxUDb71aEPDX7OFeZUqaQwPCLIf7b-LKC99JJK4_MtgNDSKtSWBqjvW815dIYseRsmUL2htiFNW3-_0JxDeBoabM79onXtW0PukeEsDveFLXrwmQjLU8fpsZUYykfpCs5VeZMG_xSonf3-ItZFt51W_h79lFYWkG8f93rNoQ1m_s-a27TUDWG_CGqoRXd-SO9kXSRbNIOpK22al6Ne0lOcL2j_a2SFlvM1BA"
-                    style={{ filter: 'contrast(1.3) brightness(0.9)' }}
-                  />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(0,255,133,0.2)_0%,_transparent_60%)] z-10 mix-blend-screen pointer-events-none" />
-                </div>
-                {/* HUD top-left */}
-                <div className="absolute top-4 left-4 z-20 font-label-caps text-label-caps text-primary-container tracking-widest flex items-center gap-2 drop-shadow-[0_0_5px_rgba(0,255,133,0.8)]">
-                  <div className="w-2 h-2 bg-danger-red rounded-full animate-pulse shadow-[0_0_5px_#FF4B4B]" />
-                  LIVE INGESTION
-                </div>
-                {/* HUD bottom-right */}
-                <div className="absolute bottom-4 right-4 z-20 font-label-caps text-[10px] text-primary-container text-right drop-shadow-[0_0_3px_rgba(0,255,133,0.5)]">
-                  LATENCY: 12ms<br />FRAME_RATE: 60FPS
-                </div>
-              </div>
-            </div>
-
+          {/* Right Column (Floating tech badges over background) */}
+          <div className="hidden lg:flex lg:col-span-6 relative h-[450px] pointer-events-none items-center justify-end">
             {/* Float tag: XGBOOST */}
-            <div className="absolute -top-5 left-6 lg:-left-6 z-30 skew-x-[15deg] bg-[#09090b] border border-primary-container px-3 py-2 shadow-[0_0_15px_rgba(0,255,133,0.5)] animate-float-slow">
+            <div className="absolute top-12 right-24 z-30 skew-x-[15deg] bg-[#09090b] border border-primary-container px-3 py-2 shadow-[0_0_15px_rgba(0,255,133,0.5)] animate-float-slow pointer-events-auto">
               <span className="block skew-x-[-15deg] font-label-caps text-label-caps text-primary-container font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>psychology</span>
                 XGBOOST
               </span>
             </div>
 
-            {/* Float tag: SCIKIT-LEARN */}
-            <div className="absolute bottom-8 -right-2 lg:-right-10 z-30 skew-x-[-15deg] bg-[#09090b] border border-secondary-container px-3 py-2 shadow-[0_0_15px_rgba(0,224,255,0.5)] animate-float-slow-reverse">
+            {/* Float tag: WC PREDICTION */}
+            <div className="absolute bottom-20 right-8 z-30 skew-x-[-15deg] bg-[#09090b] border border-secondary-container px-3 py-2 shadow-[0_0_15px_rgba(0,224,255,0.5)] animate-float-slow-reverse pointer-events-auto">
               <span className="block skew-x-[15deg] font-label-caps text-label-caps text-secondary-container font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>memory</span>
-                SCIKIT-LEARN
+                WC PREDICTION
               </span>
             </div>
           </div>
+
         </div>
       </div>
+    </main>
     </main>
   )
 }
