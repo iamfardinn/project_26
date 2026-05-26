@@ -15,17 +15,17 @@ export default function TopAppBar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 font-label-caps text-label-caps">
-            <a href="#" className="text-primary-container font-bold border-b-2 border-primary-container pb-1 skew-x-[-12deg] px-2 hover:opacity-80 transition-opacity">
-              LIVE PITCH
-            </a>
             <a href="#match" className="text-text-muted hover:text-primary-container transition-colors skew-x-[-12deg] px-2 py-1">
-              XG ENGINE
+              MATCH ENGINE
             </a>
             <a href="#xg" className="text-text-muted hover:text-primary-container transition-colors skew-x-[-12deg] px-2 py-1">
-              MODEL STATUS
+              SPATIAL XG
             </a>
             <a href="#penalty" className="text-text-muted hover:text-primary-container transition-colors skew-x-[-12deg] px-2 py-1">
-              TACTICS
+              PENALTY SIMULATOR
+            </a>
+            <a href="#tournament" className="text-text-muted hover:text-primary-container transition-colors skew-x-[-12deg] px-2 py-1">
+              TOURNAMENT BRACKET
             </a>
           </nav>
 
@@ -68,14 +68,19 @@ export default function TopAppBar() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-outline-variant py-4 space-y-3">
-            {['LIVE PITCH', 'XG ENGINE', 'MODEL STATUS', 'TACTICS'].map((item, i) => (
+            {[
+              { label: 'MATCH ENGINE', href: '#match' },
+              { label: 'SPATIAL XG', href: '#xg' },
+              { label: 'PENALTY SIMULATOR', href: '#penalty' },
+              { label: 'TOURNAMENT BRACKET', href: '#tournament' }
+            ].map((item, i) => (
               <a
                 key={i}
-                href="#"
+                href={item.href}
                 className="block font-label-caps text-label-caps text-text-muted hover:text-primary-container transition-colors px-2 py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item}
+                {item.label}
               </a>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 export default function SpatialXGAnalytics() {
   const [shotLoc, setShotLoc] = useState({ x: 108.0, y: 40.0, pctX: 0.9, pctY: 0.5 })
@@ -7,6 +7,24 @@ export default function SpatialXGAnalytics() {
   const [underPressure, setUnderPressure] = useState(false)
   const [xg, setXg] = useState(0.648)
   const [loading, setLoading] = useState(false)
+  const [teams, setTeams] = useState([])
+  const [selectedTeam, setSelectedTeam] = useState('')
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/teams')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load team list')
+        return res.json()
+      })
+      .then((data) => {
+        setTeams(data)
+        const defaultTeam = data.find((t) => t.name === 'Argentina') || data[0]
+        if (defaultTeam) setSelectedTeam(defaultTeam.name)
+      })
+      .catch((err) => {
+        console.error('Error loading teams in xG component:', err)
+      })
+  }, [])
 
   const handlePitchClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -117,7 +135,7 @@ export default function SpatialXGAnalytics() {
             {/* Live xG Outcome Card */}
             <div className="bg-surface border-l-4 border-primary-container p-5 lg:p-6 shadow-[0_0_20px_rgba(0,255,133,0.15)]">
               <h3 className="font-display-lg text-xl lg:text-2xl italic skew-x-[-12deg] text-primary-container mb-4">
-                EXPECTED GOALS (xG)
+                {selectedTeam ? `${selectedTeam.toUpperCase()} xG OUTCOME` : 'EXPECTED GOALS (xG)'}
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
@@ -141,6 +159,21 @@ export default function SpatialXGAnalytics() {
                 SHOT PARAMETERS
               </h3>
               <div className="space-y-4 font-label-caps text-label-caps">
+                {/* Team Selector */}
+                <div>
+                  <label className="block text-[11px] text-text-muted mb-1">SELECT SHOOTING TEAM</label>
+                  <select
+                    value={selectedTeam}
+                    onChange={(e) => setSelectedTeam(e.target.value)}
+                    className="w-full bg-[#09090b] border border-outline-variant text-on-background py-2 px-3 focus:outline-none focus:border-secondary-container transition-all cursor-pointer text-xs"
+                  >
+                    {teams.map((t) => (
+                      <option key={t.name} value={t.name}>
+                        {t.name.toUpperCase()} (ELO: {Math.round(t.elo)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {/* Body Part */}
                 <div>
                   <label className="block text-[11px] text-text-muted mb-1">BODY PART</label>
@@ -196,6 +229,7 @@ export default function SpatialXGAnalytics() {
                 KEY INSIGHT
               </h3>
               <p className="font-body-md text-body-md text-text-muted text-xs leading-relaxed">
+                {selectedTeam && `${selectedTeam} has an average scoring rate of ${teams.find(t => t.name === selectedTeam)?.goals_avg || 1.0} goals/match. `}
                 {xg > 0.6 
                   ? "Extreme scoring zone. Shots from this location have very high conversion rates."
                   : xg > 0.25
