@@ -152,22 +152,22 @@ def train_model3():
     for _, row in df.iterrows():
         outcome = row["outcome_raw"]
         if outcome == "Goal":
-            kicker_power.append(np.random.normal(88, 4))
-            kicker_accuracy.append(np.random.normal(88, 4))
-            keeper_reach.append(np.random.normal(76, 4))
-            keeper_reflexes.append(np.random.normal(76, 4))
+            kicker_power.append(np.random.normal(88, 12))
+            kicker_accuracy.append(np.random.normal(88, 12))
+            keeper_reach.append(np.random.normal(76, 12))
+            keeper_reflexes.append(np.random.normal(76, 12))
             outcomes.append(0)
         elif outcome in ["Saved", "Saved to Post"]:
-            kicker_power.append(np.random.normal(82, 4))
-            kicker_accuracy.append(np.random.normal(80, 4))
-            keeper_reach.append(np.random.normal(88, 4))
-            keeper_reflexes.append(np.random.normal(88, 4))
+            kicker_power.append(np.random.normal(82, 12))
+            kicker_accuracy.append(np.random.normal(80, 12))
+            keeper_reach.append(np.random.normal(88, 12))
+            keeper_reflexes.append(np.random.normal(88, 12))
             outcomes.append(1)
         else:  # Off T, Post
-            kicker_power.append(np.random.normal(84, 4))
-            kicker_accuracy.append(np.random.normal(65, 4))
-            keeper_reach.append(np.random.normal(80, 4))
-            keeper_reflexes.append(np.random.normal(80, 4))
+            kicker_power.append(np.random.normal(84, 12))
+            kicker_accuracy.append(np.random.normal(65, 12))
+            keeper_reach.append(np.random.normal(80, 12))
+            keeper_reflexes.append(np.random.normal(80, 12))
             outcomes.append(2)
 
     synth_df = pd.DataFrame({
