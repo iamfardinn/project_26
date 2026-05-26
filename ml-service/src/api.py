@@ -183,6 +183,19 @@ def health_check():
     }
 
 
+@app.get("/teams")
+def get_teams():
+    return [
+        {
+            "name": team,
+            "elo": round(elo, 1),
+            "form": team_stats.get(team, {}).get("form", 0.5),
+            "goals_avg": round(team_stats.get(team, {}).get("goals_avg", 1.0), 2)
+        }
+        for team, elo in sorted(elo_dict.items())
+    ]
+
+
 @app.post("/predict/match")
 def predict_match(req: MatchRequest):
     if not match_model_bundle:

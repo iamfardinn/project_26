@@ -42,6 +42,17 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// 1.5. Proxy teams list
+app.get('/api/teams', async (req, res) => {
+  try {
+    const mlRes = await axios.get(`${ML_SERVICE_URL}/teams`);
+    res.json(mlRes.data);
+  } catch (error) {
+    console.error('Failed to proxy /api/teams:', error.message);
+    res.status(500).json({ error: 'Failed to fetch team list' });
+  }
+});
+
 // 2. Proxy match outcome prediction
 app.post('/api/predict/match', async (req, res) => {
   try {
