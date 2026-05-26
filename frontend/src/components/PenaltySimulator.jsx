@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 
 export default function PenaltySimulator() {
-  const [kicker, setKicker] = useState('K. MBAPPE')
-  const [keeper, setKeeper] = useState('T. COURTOIS')
+  const [kickers, setKickers] = useState([])
+  const [keepers, setKeepers] = useState([])
+  const [kicker, setKicker] = useState('')
+  const [keeper, setKeeper] = useState('')
   const [probabilities, setProbabilities] = useState([
     { quadrant: 0, score_probability: 0.73, save_probability: 0.16, miss_probability: 0.11 },
     { quadrant: 1, score_probability: 0.75, save_probability: 0.24, miss_probability: 0.01 },
@@ -14,6 +16,7 @@ export default function PenaltySimulator() {
   const [loading, setLoading] = useState(false)
 
   const fetchPenaltyPredictions = async (kName, gName) => {
+    if (!kName || !gName) return
     setLoading(true)
     try {
       const res = await fetch('http://localhost:5000/api/predict/penalty', {
@@ -35,9 +38,49 @@ export default function PenaltySimulator() {
     }
   }
 
-  // Fetch initial predictions on load
+  // Load players from squads database on mount
   useEffect(() => {
-    fetchPenaltyPredictions(kicker, keeper)
+    const loadPlayers = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/squads')
+        if (!res.ok) throw new Error('Failed to load squads')
+        const data = await res.json()
+        
+        const allKickers = []
+        const allKeepers = []
+        
+        Object.entries(data).forEach(([team, players]) => {
+          players.forEach(p => {
+            if (p.position === 'GK') {
+              allKeepers.push({ name: p.name.toUpperCase(), team })
+            } else {
+              allKickers.push({ name: p.name.toUpperCase(), team })
+            }
+          })
+        })
+        
+        // Sort alphabetically by name
+        allKickers.sort((a, b) => a.name.localeCompare(b.name))
+        allKeepers.sort((a, b) => a.name.localeCompare(b.name))
+        
+        setKickers(allKickers)
+        setKeepers(allKeepers)
+        
+        // Select sensible defaults (e.g. Messi and Martinez if they exist)
+        const defaultKicker = allKickers.find(k => k.name.includes('MESSI'))?.name || (allKickers[0] ? allKickers[0].name : '')
+        const defaultKeeper = allKeepers.find(g => g.name.includes('MARTINEZ'))?.name || (allKeepers[0] ? allKeepers[0].name : '')
+        
+        setKicker(defaultKicker)
+        setKeeper(defaultKeeper)
+        
+        if (defaultKicker && defaultKeeper) {
+          fetchPenaltyPredictions(defaultKicker, defaultKeeper)
+        }
+      } catch (err) {
+        console.error('Error loading players for Penalty Simulator:', err)
+      }
+    }
+    loadPlayers()
   }, [])
 
   const handleKickerChange = (val) => {
@@ -98,10 +141,11 @@ export default function PenaltySimulator() {
                     onChange={(e) => handleKickerChange(e.target.value)}
                     className="w-full bg-surface-container border border-outline-variant text-on-background font-label-caps text-label-caps py-4 px-4 focus:outline-none focus:border-secondary-container transition-all cursor-pointer"
                   >
-                    <option value="K. MBAPPE">K. MBAPPE</option>
-                    <option value="H. KANE">H. KANE</option>
-                    <option value="L. MESSI">L. MESSI</option>
-                    <option value="C. RONALDO">C. RONALDO</option>
+                    {kickers.map(k => (
+                      <option key={`${k.name}-${k.team}`} value={k.name}>
+                        {k.name} ({k.team.toUpperCase()})
+                      </option>
+                    ))}
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary-container" style={{ fontSize: '20px' }}>expand_more</span>
                 </div>
@@ -116,10 +160,11 @@ export default function PenaltySimulator() {
                     onChange={(e) => handleKeeperChange(e.target.value)}
                     className="w-full bg-surface-container border border-outline-variant text-on-background font-label-caps text-label-caps py-4 px-4 focus:outline-none focus:border-secondary-container transition-all cursor-pointer"
                   >
-                    <option value="T. COURTOIS">T. COURTOIS</option>
-                    <option value="M. MAIGNAN">M. MAIGNAN</option>
-                    <option value="E. MARTINEZ">E. MARTINEZ</option>
-                    <option value="A. ONANA">A. ONANA</option>
+                    {keepers.map(g => (
+                      <option key={`${g.name}-${g.team}`} value={g.name}>
+                        {g.name} ({g.team.toUpperCase()})
+                      </option>
+                    ))}
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary-container" style={{ fontSize: '20px' }}>expand_more</span>
                 </div>

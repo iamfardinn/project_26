@@ -40,7 +40,7 @@ export default function Hero() {
 
             {/* Subtext */}
             <p className="font-body-lg text-body-lg text-text-muted mb-8 lg:mb-12 max-w-lg border-l-2 border-primary-container pl-4 shadow-[-5px_0_10px_rgba(0,255,133,0.1)]">
-              Deploy advanced predictive models. Analyze real-time spatial data. Dominate the pitch with tournament-grade machine learning infrastructure.
+              Experience the ultimate FIFA World Cup 2026 simulator. Leverage state-of-the-art machine learning models to analyze real-time spatial stats, predict match outcomes, and explore tournament analytics with predictive AI.
             </p>
 
             {/* CTAs */}
@@ -101,11 +101,11 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Float tag: PYTORCH */}
+            {/* Float tag: SCIKIT-LEARN */}
             <div className="absolute bottom-8 -right-2 lg:-right-10 z-30 skew-x-[-15deg] bg-[#09090b] border border-secondary-container px-3 py-2 shadow-[0_0_15px_rgba(0,224,255,0.5)] animate-float-slow-reverse">
               <span className="block skew-x-[15deg] font-label-caps text-label-caps text-secondary-container font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>memory</span>
-                PYTORCH
+                SCIKIT-LEARN
               </span>
             </div>
           </div>

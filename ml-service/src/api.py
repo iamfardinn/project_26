@@ -348,13 +348,43 @@ def predict_xg(req: XGRequest):
     }
 
 
+import unicodedata
+
+def normalize_name(name: str) -> str:
+    # Normalize unicode to decompose accents, then filter to ASCII
+    nfkd_form = unicodedata.normalize('NFKD', name)
+    only_ascii = nfkd_form.encode('ASCII', 'ignore').decode('ASCII')
+    return only_ascii.upper().strip()
+
 def find_player_stats(player_name: str):
-    name_upper = player_name.upper().strip()
+    name_norm = normalize_name(player_name)
+    
+    # First pass: look for exact normalized matches or substring matches
     for team, players in squads_db.items():
         for p in players:
-            p_name = p["name"].upper().strip()
-            # Match exact name or partial name
-            if p_name == name_upper or name_upper in p_name or p_name in name_upper:
+            p_name_norm = normalize_name(p["name"])
+            
+            # Exact match
+            if p_name_norm == name_norm:
+                return p
+                
+            # Check for initial matching (e.g., "K. MBAPPE" matching "KYLIAN MBAPPE")
+            parts_query = name_norm.split()
+            parts_db = p_name_norm.split()
+            
+            if len(parts_query) >= 2 and len(parts_db) >= 2:
+                # E.g. Query: ["K.", "MBAPPE"], Db: ["KYLIAN", "MBAPPE"]
+                q_initial = parts_query[0].replace('.', '')
+                db_initial = parts_db[0].replace('.', '')
+                q_last = parts_query[-1]
+                db_last = parts_db[-1]
+                
+                # If first letters match and last names match
+                if q_initial[0] == db_initial[0] and q_last == db_last:
+                    return p
+            
+            # Substring matches as fallback
+            if name_norm in p_name_norm or p_name_norm in name_norm:
                 return p
     return None
 
