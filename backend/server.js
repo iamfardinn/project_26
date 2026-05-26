@@ -149,14 +149,34 @@ const simulateMatch = async (teamA, teamB, squads = {}, deterministic = false, i
   
   let { home_win_prob, draw_prob, away_win_prob, home_elo, away_elo, home_goals_avg, away_goals_avg } = mlRes.data;
   
-  if (squads[teamA]) {
-    const avgRating = squads[teamA].reduce((acc, p) => acc + p.rating, 0) / squads[teamA].length;
-    home_elo += (avgRating - 80) * 5;
-  }
-  if (squads[teamB]) {
-    const avgRating = squads[teamB].reduce((acc, p) => acc + p.rating, 0) / squads[teamB].length;
-    away_elo += (avgRating - 80) * 5;
-  }
+  // Calculate squad stats based on player form & goals (NOT player rating or ELO)
+  const getSquadMetric = (squad = []) => {
+    if (squad.length === 0) return { form: 7.5, goals: 5 };
+    const avgForm = squad.reduce((acc, p) => acc + (p.form || 7.5), 0) / squad.length;
+    const totalGoals = squad.reduce((acc, p) => acc + (p.goals || 0), 0);
+    return { form: avgForm, goals: totalGoals };
+  };
+
+  const homeMetric = getSquadMetric(squads[teamA]);
+  const awayMetric = getSquadMetric(squads[teamB]);
+
+  // Squad Score is weighted by player form (avg 7.5) and season goals
+  const homeSquadScore = homeMetric.form * 8 + homeMetric.goals;
+  const awaySquadScore = awayMetric.form * 8 + awayMetric.goals;
+  
+  // Adjust win probabilities dynamically based on squad form & goals instead of Elo
+  const scoreDiff = homeSquadScore - awaySquadScore;
+  const probabilityAdj = Math.tanh(scoreDiff / 40) * 0.25; // limit adjustment to +/- 25%
+  home_win_prob += probabilityAdj;
+  away_win_prob -= probabilityAdj;
+
+  // Ensure probabilities are valid and normalized
+  if (home_win_prob < 0.05) home_win_prob = 0.05;
+  if (away_win_prob < 0.05) away_win_prob = 0.05;
+  const probSum = home_win_prob + draw_prob + away_win_prob;
+  home_win_prob /= probSum;
+  draw_prob /= probSum;
+  away_win_prob /= probSum;
 
   let winner = '';
   let scoreStr = '';
@@ -180,7 +200,8 @@ const simulateMatch = async (teamA, teamB, squads = {}, deterministic = false, i
         winner = 'Draw';
         homeGoals = awayGoals = Math.min(Math.max(Math.round((home_goals_avg + away_goals_avg) / 2), 1), 3);
       } else {
-        const homeWins = home_elo >= away_elo;
+        // Tie breaker based on squad form & goals (instead of Elo)
+        const homeWins = homeSquadScore >= awaySquadScore;
         winner = homeWins ? teamA : teamB;
         homeGoals = awayGoals = Math.min(Math.max(Math.round((home_goals_avg + away_goals_avg) / 2), 1), 3);
         shootoutStr = homeWins ? 'Pen: 5-4' : 'Pen: 4-5';
@@ -199,8 +220,8 @@ const simulateMatch = async (teamA, teamB, squads = {}, deterministic = false, i
       winner = 'Draw';
       homeGoals = awayGoals = Math.floor(Math.random() * 3);
     } else if (r < home_win_prob + draw_prob && !isGroupStage) {
-      const eloDiff = home_elo - away_elo;
-      const homeShootoutProb = 1 / (1 + Math.exp(-eloDiff / 150));
+      // Shootout win probability based on squad form & goals (instead of Elo)
+      const homeShootoutProb = 1 / (1 + Math.exp(-scoreDiff / 15));
       const sr = Math.random();
       homeGoals = awayGoals = Math.floor(Math.random() * 3);
       if (sr < homeShootoutProb) {
@@ -288,26 +309,75 @@ app.post('/api/simulate/tournament', async (req, res) => {
     
     const get1st = g => groupResults[g].standings[0].team;
     const get2nd = g => groupResults[g].standings[1].team;
-    const get3rd = g => { const t = advancedThirds.find(x => x.group === g); return t ? t.team : null; };
-    const thirds = advancedThirds.map(t => t.team);
+
+    // Backtracking match algorithm to assign third place qualifiers to their allowed slots
+    const assignThirdsToSlots = (thirdsList) => {
+      const slots = [
+        { name: 'ABCDF3', allowed: ['A', 'B', 'C', 'D', 'F'] },
+        { name: 'CDFGH3', allowed: ['C', 'D', 'F', 'G', 'H'] },
+        { name: 'BEFIJ3', allowed: ['B', 'E', 'F', 'I', 'J'] },
+        { name: 'AEHIJ3', allowed: ['A', 'E', 'H', 'I', 'J'] },
+        { name: 'CEFHI3', allowed: ['C', 'E', 'F', 'H', 'I'] },
+        { name: 'EHIJK3', allowed: ['E', 'H', 'I', 'J', 'K'] },
+        { name: 'EFGIJ3', allowed: ['E', 'F', 'G', 'I', 'J'] },
+        { name: 'DEIJL3', allowed: ['D', 'E', 'I', 'J', 'L'] }
+      ];
+      
+      const assignment = {};
+      const usedTeams = new Set();
+      
+      const backtrack = (slotIdx) => {
+        if (slotIdx === slots.length) return true;
+        const slot = slots[slotIdx];
+        
+        for (let i = 0; i < thirdsList.length; i++) {
+          const teamObj = thirdsList[i];
+          if (usedTeams.has(teamObj.team)) continue;
+          
+          if (slot.allowed.includes(teamObj.group)) {
+            assignment[slot.name] = teamObj.team;
+            usedTeams.add(teamObj.team);
+            
+            if (backtrack(slotIdx + 1)) return true;
+            
+            // backtrack
+            delete assignment[slot.name];
+            usedTeams.delete(teamObj.team);
+          }
+        }
+        return false;
+      };
+      
+      const success = backtrack(0);
+      if (!success) {
+        console.warn("Could not find perfect matching for third-place teams. Using rank order fallback.");
+        slots.forEach((slot, idx) => {
+          assignment[slot.name] = thirdsList[idx] ? thirdsList[idx].team : null;
+        });
+      }
+      return assignment;
+    };
+    
+    const thirdAssignments = assignThirdsToSlots(advancedThirds);
     
     const r32Matchups = [
-      { id: 'R32_1', teamA: get1st('A'), teamB: thirds[0] },
-      { id: 'R32_2', teamA: get2nd('A'), teamB: get2nd('B') },
-      { id: 'R32_3', teamA: get1st('B'), teamB: thirds[1] },
-      { id: 'R32_4', teamA: get2nd('C'), teamB: get2nd('D') },
-      { id: 'R32_5', teamA: get1st('C'), teamB: thirds[2] },
-      { id: 'R32_6', teamA: get2nd('E'), teamB: get2nd('F') },
-      { id: 'R32_7', teamA: get1st('D'), teamB: thirds[3] },
-      { id: 'R32_8', teamA: get2nd('G'), teamB: get2nd('H') },
-      { id: 'R32_9', teamA: get1st('E'), teamB: thirds[4] },
-      { id: 'R32_10', teamA: get2nd('I'), teamB: get2nd('J') },
-      { id: 'R32_11', teamA: get1st('F'), teamB: thirds[5] },
-      { id: 'R32_12', teamA: get2nd('K'), teamB: get2nd('L') },
-      { id: 'R32_13', teamA: get1st('G'), teamB: thirds[6] },
-      { id: 'R32_14', teamA: get1st('H'), teamB: thirds[7] },
-      { id: 'R32_15', teamA: get1st('I'), teamB: get1st('J') },
-      { id: 'R32_16', teamA: get1st('K'), teamB: get1st('L') }
+      { id: 'R32_1', teamA: get2nd('A'), teamB: get2nd('B') },
+      { id: 'R32_2', teamA: get1st('F'), teamB: get2nd('C') },
+      { id: 'R32_3', teamA: get1st('E'), teamB: thirdAssignments['ABCDF3'] },
+      { id: 'R32_4', teamA: get1st('I'), teamB: thirdAssignments['CDFGH3'] },
+      { id: 'R32_5', teamA: get2nd('K'), teamB: get2nd('L') },
+      { id: 'R32_6', teamA: get1st('H'), teamB: get2nd('J') },
+      { id: 'R32_7', teamA: get1st('D'), teamB: thirdAssignments['BEFIJ3'] },
+      { id: 'R32_8', teamA: get1st('G'), teamB: thirdAssignments['AEHIJ3'] },
+      
+      { id: 'R32_9', teamA: get1st('C'), teamB: get2nd('F') },
+      { id: 'R32_10', teamA: get2nd('E'), teamB: get2nd('I') },
+      { id: 'R32_11', teamA: get1st('A'), teamB: thirdAssignments['CEFHI3'] },
+      { id: 'R32_12', teamA: get1st('L'), teamB: thirdAssignments['EHIJK3'] },
+      { id: 'R32_13', teamA: get1st('J'), teamB: get2nd('H') },
+      { id: 'R32_14', teamA: get2nd('D'), teamB: get2nd('G') },
+      { id: 'R32_15', teamA: get1st('B'), teamB: thirdAssignments['EFGIJ3'] },
+      { id: 'R32_16', teamA: get1st('K'), teamB: thirdAssignments['DEIJL3'] }
     ];
     
     const r32Matches = await Promise.all(r32Matchups.map(m => simulateMatch(m.teamA, m.teamB, squads, deterministic)));

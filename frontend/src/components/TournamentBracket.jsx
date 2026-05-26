@@ -240,14 +240,14 @@ export default function TournamentBracket() {
               
               {/* L1: Round of 32 (Left) */}
               <div className="flex flex-col gap-2">
-                <RenderMatch roundKey="round_of_32" matchId="R32_1" placeholderA="1A" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_2" placeholderA="2A" placeholderB="2B" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_3" placeholderA="1B" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_4" placeholderA="2C" placeholderB="2D" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_5" placeholderA="1C" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_6" placeholderA="2E" placeholderB="2F" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_7" placeholderA="1D" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_8" placeholderA="2G" placeholderB="2H" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_1" placeholderA="2A" placeholderB="2B" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_2" placeholderA="1F" placeholderB="2C" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_3" placeholderA="1E" placeholderB="ABCDF3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_4" placeholderA="1I" placeholderB="CDFGH3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_5" placeholderA="2K" placeholderB="2L" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_6" placeholderA="1H" placeholderB="2J" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_7" placeholderA="1D" placeholderB="BEFIJ3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_8" placeholderA="1G" placeholderB="AEHIJ3" />
               </div>
 
               {/* L2: Round of 16 (Left) */}
@@ -328,14 +328,14 @@ export default function TournamentBracket() {
 
               {/* R1: Round of 32 (Right) */}
               <div className="flex flex-col gap-2">
-                <RenderMatch roundKey="round_of_32" matchId="R32_9" placeholderA="1E" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_10" placeholderA="2I" placeholderB="2J" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_11" placeholderA="1F" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_12" placeholderA="2K" placeholderB="2L" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_13" placeholderA="1G" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_14" placeholderA="1H" placeholderB="3rd" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_15" placeholderA="1I" placeholderB="1J" />
-                <RenderMatch roundKey="round_of_32" matchId="R32_16" placeholderA="1K" placeholderB="1L" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_9" placeholderA="1C" placeholderB="2F" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_10" placeholderA="2E" placeholderB="2I" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_11" placeholderA="1A" placeholderB="CEFHI3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_12" placeholderA="1L" placeholderB="EHIJK3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_13" placeholderA="1J" placeholderB="2H" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_14" placeholderA="2D" placeholderB="2G" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_15" placeholderA="1B" placeholderB="EFGIJ3" />
+                <RenderMatch roundKey="round_of_32" matchId="R32_16" placeholderA="1K" placeholderB="DEIJL3" />
               </div>
 
             </div>
